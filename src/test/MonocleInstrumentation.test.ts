@@ -21,9 +21,19 @@ describe("setupMonocle", () => {
   test("should initialize with basic configuration", () => {
     // Create a dummy span processor
     const dummySpanProcessor = {
-      onStart: jest.fn(),
-      onEnd: jest.fn(),
-      shutdown: jest.fn()
+      _comment: "provider type ,name , deployment , inference_endpoint",
+      attribute: "type",
+      accessor: function ({ instance }) {
+        if (
+          instance?.constructor?.name?.toLowerCase().includes("azurechatopenai")
+        ) {
+          return "inference.azure_openai";
+        }
+        if (instance?.constructor?.name?.toLowerCase().includes("chatopenai")) {
+          return "inference.openai";
+        }
+        return "";
+      }
     };
 
     // Create a dummy wrapper method
