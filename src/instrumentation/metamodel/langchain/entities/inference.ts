@@ -1,4 +1,4 @@
-import { extractAssistantMessage } from "../../utils";
+import { extractAssistantMessage, getLlmMetadata } from "../../utils.js";
 
 export const config = {
   type: "inference",
@@ -57,7 +57,7 @@ export const config = {
       {
         attribute: "type",
         accessor: function ({ instance }) {
-          return "model.llm" + (instance.model_name || instance.model);
+          return "model.llm." + (instance.model_name || instance.model);
         }
       }
     ]
@@ -68,12 +68,12 @@ export const config = {
       attributes: [
         {
           _comment: "this is instruction to LLM",
-          attribute: "user",
+          attribute: "input",
           accessor: function ({
             args
             // instance
           }) {
-            return args[0].value;
+            return [args[0].value];
           }
         }
       ]
@@ -85,7 +85,18 @@ export const config = {
           _comment: "this is response from LLM",
           attribute: "response",
           accessor: function ({ response }) {
-            return extractAssistantMessage(response);
+            return [extractAssistantMessage(response)];
+          }
+        }
+      ]
+    },
+    {
+      name: "metadata",
+      attributes: [
+        {
+          _comment: "this is response metadata from LLM",
+          accessor: function ({ instance, response }) {
+            return getLlmMetadata({ response, instance });
           }
         }
       ]
