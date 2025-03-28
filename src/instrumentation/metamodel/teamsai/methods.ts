@@ -6,7 +6,6 @@ export const config = [
     object: "OpenAIModel",
     method: "completePrompt",
     spanName: "teamsai.workflow",
-    // wrapper_method: atask_wrapper,
     output_processor: [require("./entities/teamsOutputProcessor.js").config]
     // spanHandler: new NonFrameworkSpanHandler()
   },
@@ -15,8 +14,9 @@ export const config = [
     object: "ActionPlanner",
     method: "completePrompt",
     spanName: "teamsai.workflow",
-    // wrapper_method: atask_wrapper,
-    output_processor: [require("./entities/teamsOutputProcessor.js").config]
+    output_processor: [
+      require("./entities/actionPlannerOutputProcessor.js").config
+    ]
     // spanHandler: new NonFrameworkSpanHandler()
   }
 ];

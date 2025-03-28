@@ -1,4 +1,6 @@
-export const TEAMSAI_OUTPUT_PROCESSOR = {
+import { extractTeamsAiInfo } from "../../utils";
+
+export const config = {
   type: "inference",
   attributes: [
     [
@@ -13,20 +15,39 @@ export const TEAMSAI_OUTPUT_PROCESSOR = {
       },
       {
         attribute: "deployment",
-        accessor: ({ args }) =>
-          args.instance?._options?.default_model || "unknown"
+        accessor: ({ args }) => {
+          // Access PromptManager options (index 2)
+          return (
+            extractTeamsAiInfo(args[2], "_options.promptsFolder", "unknown")
+              .split("/")
+              .filter(Boolean)
+              .pop() || "unknown"
+          );
+        }
       }
     ],
     [
       {
         _comment: "LLM Model",
         attribute: "name",
-        accessor: ({ args }) =>
-          args.instance?._options?.default_model || "unknown"
+        accessor: ({ args }) => {
+          // Attempt to extract model name from various possible locations
+          return extractTeamsAiInfo(
+            args[2],
+            "_options.default_model",
+            extractTeamsAiInfo(args[2], "_options.promptsFolder", "unknown")
+              .split("/")
+              .filter(Boolean)
+              .pop()
+          );
+        }
       },
       {
         attribute: "is_streaming",
-        accessor: ({ args }) => args.instance?._options?.stream || false
+        accessor: ({ args }) => {
+          // Access PromptManager options (index 2)
+          return extractTeamsAiInfo(args[2], "_options.stream", false);
+        }
       }
     ]
   ],
@@ -39,12 +60,17 @@ export const TEAMSAI_OUTPUT_PROCESSOR = {
           _comment: "this is instruction to LLM",
           attribute: "input",
           accessor: ({ args }) => {
-            console.log("args", args, "THIS IS THE ARGS BY MONOCLE");
-            return args;
+            // Access TurnContext (index 0)
+            return extractTeamsAiInfo(
+              args[0],
+              "_activity.text",
+              "No input found"
+            );
           }
         }
       ]
     },
+
     {
       name: "data.output",
       _comment: "output from Teams AI",
@@ -52,10 +78,11 @@ export const TEAMSAI_OUTPUT_PROCESSOR = {
         {
           attribute: "response",
           accessor: ({ args }) => {
-            if (args.result?.message?.content !== undefined) {
-              return args.result.message.content;
-            }
-            return String(args.result || "");
+            // Log the arguments to help debug
+            console.log("Arguments for response extraction:", args);
+
+            // Placeholder response
+            return "No response available"; // YET TO BE CHECKED
           }
         }
       ]
@@ -66,12 +93,32 @@ export const TEAMSAI_OUTPUT_PROCESSOR = {
         {
           _comment: "metadata from Teams AI response",
           accessor: ({ args }) => {
-            const usage = args.result?.usage || {};
+            // Calculate latency based on available information
+            const startTime = extractTeamsAiInfo(
+              args[1],
+              "_loadingPromise",
+              Date.now()
+            );
+            const endTime = Date.now();
+
+            // Estimate latency based on prompt manager options
+            const promptTokens = extractTeamsAiInfo(
+              args[2],
+              "_options.max_conversation_history_tokens",
+              0
+            );
+
+            const completionTokens = extractTeamsAiInfo(
+              args[4],
+              "config.completion.max_tokens",
+              0
+            );
+
             return {
-              prompt_tokens: usage.prompt_tokens || 0,
-              completion_tokens: usage.completion_tokens || 0,
-              total_tokens: usage.total_tokens || 0,
-              latency_ms: args.latency_ms || 0
+              prompt_tokens: promptTokens,
+              completion_tokens: completionTokens,
+              total_tokens: promptTokens + completionTokens,
+              latency_ms: endTime - startTime
             };
           }
         }

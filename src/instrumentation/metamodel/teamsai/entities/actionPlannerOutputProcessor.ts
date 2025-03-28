@@ -1,4 +1,4 @@
-export const ACTIONPLANNER_OUTPUT_PROCESSOR = {
+export const config = {
   type: "inference",
   attributes: [
     [
@@ -13,19 +13,31 @@ export const ACTIONPLANNER_OUTPUT_PROCESSOR = {
       },
       {
         attribute: "max_repair_attempts",
-        accessor: ({ args }) => args.instance?.max_repair_attempts ?? 3
+        accessor: ({ args }) => {
+          // Accessing PromptManager's options
+          console.log("args in action planner:", args);
+          const promptManager = args[2];
+          return promptManager?._options?.max_repair_attempts ?? 3;
+        }
       }
     ],
     [
       {
         _comment: "model configuration",
         attribute: "model",
-        accessor: ({ args }) => args.instance?.constructor?.name ?? "unknown"
+        accessor: ({ args }) => {
+          // Accessing PromptManager's options
+          const promptManager = args[2];
+          return promptManager?._options?.model?.constructor?.name ?? "unknown";
+        }
       },
       {
         attribute: "tokenizer",
-        accessor: ({ args }) =>
-          args.instance?.tokenizer?.constructor?.name ?? "GPTTokenizer"
+        accessor: ({ args }) => {
+          // Using GPTTokenizer from args (index 3)
+          const tokenizer = args[3];
+          return tokenizer?.constructor?.name ?? "GPTTokenizer";
+        }
       }
     ]
   ],
@@ -37,21 +49,28 @@ export const ACTIONPLANNER_OUTPUT_PROCESSOR = {
         {
           attribute: "prompt_name",
           accessor: ({ args }) => {
-            // Implement prompt info capture logic
-            // This might need a custom helper function similar to Python
-            return args.kwargs?.prompt_name ?? "unknown";
+            // Access config object (index 4)
+            const config = args[4];
+            return config?.name ?? "unknown";
           }
         },
         {
           attribute: "validator",
-          accessor: ({ args }) =>
-            args.kwargs?.validator?.constructor?.name ??
-            "DefaultResponseValidator"
+          accessor: () => {
+            // Placeholder as we don't see validator in the provided args
+            return "DefaultResponseValidator";
+          }
         },
         {
           attribute: "memory_type",
-          accessor: ({ args }) =>
-            args.kwargs?.memory?.constructor?.name ?? "unknown"
+          accessor: ({ args }) => {
+            // Accessing TurnState's scopes
+            const turnState = args[1];
+            const memoryTypes = turnState?._scopes
+              ? Object.keys(turnState._scopes).join(", ")
+              : "unknown";
+            return memoryTypes;
+          }
         }
       ]
     },
@@ -61,19 +80,16 @@ export const ACTIONPLANNER_OUTPUT_PROCESSOR = {
       attributes: [
         {
           attribute: "status",
-          accessor: ({ args }) => args.result?.status ?? "unknown"
-        },
-        {
-          attribute: "error",
-          accessor: ({ args }) => args.result?.error ?? null
+          accessor: () => {
+            // Placeholder as we don't see a status in the provided args
+            return "unknown";
+          }
         },
         {
           attribute: "response",
-          accessor: ({ args }) => {
-            if (args.result?.message?.content) {
-              return args.result.message.content;
-            }
-            return String(args.result ?? "");
+          accessor: () => {
+            // Placeholder as we don't see a result in the provided args
+            return "No response available";
           }
         }
       ]
@@ -83,9 +99,10 @@ export const ACTIONPLANNER_OUTPUT_PROCESSOR = {
       attributes: [
         {
           _comment: "execution metadata",
-          accessor: ({ args }) => ({
-            latency_ms: args.latency_ms,
-            feedback_enabled: args.instance?._enable_feedback_loop ?? false
+          accessor: () => ({
+            // Placeholders as we don't see these in the provided args
+            latency_ms: 0,
+            feedback_enabled: false
           })
         }
       ]
