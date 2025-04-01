@@ -60,12 +60,22 @@ export const config = {
           _comment: "this is instruction to LLM",
           attribute: "input",
           accessor: ({ args }) => {
-            // Access TurnContext (index 0)
-            return extractTeamsAiInfo(
-              args[0],
-              "_activity.text",
-              "No input found"
-            );
+            try {
+              // Access args directly without destructuring
+              const turnContext = args ? args[0] : null;
+              // Safely access the activity text
+              if (
+                turnContext &&
+                turnContext._activity &&
+                typeof turnContext._activity.text === "string"
+              ) {
+                return turnContext._activity.text;
+              }
+              return "No input found";
+            } catch (error) {
+              console.error("Error accessing input:", error);
+              return "Error retrieving input";
+            }
           }
         }
       ]
@@ -77,12 +87,18 @@ export const config = {
       attributes: [
         {
           attribute: "response",
-          accessor: ({ args }) => {
-            // Log the arguments to help debug
-            console.log("Arguments for response extraction:", args);
+          accessor: ({ response }) => {
+            try {
+              const messageContent = response?.message?.content || "";
+              const parsedContent = JSON.parse(messageContent);
 
-            // Placeholder response
-            return "No response available"; // YET TO BE CHECKED
+              return (
+                parsedContent?.results?.[0]?.answer || "No response available"
+              );
+            } catch (error) {
+              console.error("Error extracting response:", error);
+              return "Error parsing response";
+            }
           }
         }
       ]

@@ -1,3 +1,5 @@
+import { getLlmMetadata } from "../../utils";
+
 export const config = {
   type: "inference",
   attributes: [
@@ -14,10 +16,7 @@ export const config = {
       {
         attribute: "max_repair_attempts",
         accessor: ({ args }) => {
-          // Accessing PromptManager's options
-          console.log("args in action planner:", args);
-          const promptManager = args[2];
-          return promptManager?._options?.max_repair_attempts ?? 3;
+          return args[2]?.config?.completion?.max_repair_attempts ?? 3;
         }
       }
     ],
@@ -26,17 +25,13 @@ export const config = {
         _comment: "model configuration",
         attribute: "model",
         accessor: ({ args }) => {
-          // Accessing PromptManager's options
-          const promptManager = args[2];
-          return promptManager?._options?.model?.constructor?.name ?? "unknown";
+          return args[2]?.config?.completion?.model || "unknown";
         }
       },
       {
         attribute: "tokenizer",
         accessor: ({ args }) => {
-          // Using GPTTokenizer from args (index 3)
-          const tokenizer = args[3];
-          return tokenizer?.constructor?.name ?? "GPTTokenizer";
+          return args[3]?.constructor?.name || "GPTTokenizer";
         }
       }
     ]
@@ -49,27 +44,25 @@ export const config = {
         {
           attribute: "prompt_name",
           accessor: ({ args }) => {
-            // Access config object (index 4)
-            const config = args[4];
-            return config?.name ?? "unknown";
+            return args[2]?.name || "unknown";
           }
         },
         {
           attribute: "validator",
-          accessor: () => {
-            // Placeholder as we don't see validator in the provided args
-            return "DefaultResponseValidator";
+          accessor: ({ args }) => {
+            return (
+              args[3]?.__proto__?.constructor?.name ||
+              "DefaultResponseValidator"
+            );
           }
         },
         {
           attribute: "memory_type",
           accessor: ({ args }) => {
-            // Accessing TurnState's scopes
-            const turnState = args[1];
-            const memoryTypes = turnState?._scopes
-              ? Object.keys(turnState._scopes).join(", ")
-              : "unknown";
-            return memoryTypes;
+            if (args[1]?._scopes) {
+              return Object.keys(args[1]._scopes).join(", ");
+            }
+            return "unknown";
           }
         }
       ]
@@ -80,16 +73,24 @@ export const config = {
       attributes: [
         {
           attribute: "status",
-          accessor: () => {
-            // Placeholder as we don't see a status in the provided args
-            return "unknown";
+          accessor: ({ response }) => {
+            return response.status;
           }
         },
         {
           attribute: "response",
-          accessor: () => {
-            // Placeholder as we don't see a result in the provided args
-            return "No response available";
+          accessor: ({ response }) => {
+            try {
+              const messageContent = response?.message?.content || "";
+              const parsedContent = JSON.parse(messageContent);
+
+              return (
+                parsedContent?.results?.[0]?.answer || "No response available"
+              );
+            } catch (error) {
+              console.error("Error extracting response:", error);
+              return "Error parsing response";
+            }
           }
         }
       ]
@@ -99,11 +100,9 @@ export const config = {
       attributes: [
         {
           _comment: "execution metadata",
-          accessor: () => ({
-            // Placeholders as we don't see these in the provided args
-            latency_ms: 0,
-            feedback_enabled: false
-          })
+          accessor: function ({ instance, response }) {
+            return getLlmMetadata({ response, instance });
+          }
         }
       ]
     }
