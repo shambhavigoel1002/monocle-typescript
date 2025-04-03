@@ -220,13 +220,14 @@ class MonocleInstrumentation extends InstrumentationBase {
         return getPatchedMain({ tracer, ...element })
     }
 }
-
+console.log("INSTRUMENTATION MONOCLE VERSION");
 const setupMonocle = (
     workflowName: string,
     spanProcessors: SpanProcessor[] = [],
     wrapperMethods: any[] = []
 ) => {
     try {
+        console.log('Setting up Monocle for workflow:', workflowName);
         consoleLog(`Setting up Monocle for workflow: ${workflowName}`);
         const resource = new Resource({
             SERVICE_NAME: workflowName
@@ -277,6 +278,7 @@ const setupMonocle = (
 }
 
 function addSpanProcessors(okahuProcessors: SpanProcessor[] = []) {
+    console.log('Adding span processors',process.env.MONOCLE_EXPORTER);
     consoleLog('Adding span processors, environment:', {
         MONOCLE_EXPORTER_DELAY: process.env.MONOCLE_EXPORTER_DELAY,
         MONOCLE_EXPORTER: process.env.MONOCLE_EXPORTER,
@@ -287,6 +289,7 @@ function addSpanProcessors(okahuProcessors: SpanProcessor[] = []) {
 
     if (!process.env.MONOCLE_EXPORTER &&
         Object.prototype.hasOwnProperty.call(process.env, AWS_CONSTANTS.AWS_LAMBDA_FUNCTION_NAME)) {
+            console.log(`addSpanProcessors| Using AWS S3 span exporter`);
         consoleLog(`addSpanProcessors| Using AWS S3 span exporter and Console span exporter`);
         okahuProcessors.push(
             new PatchedBatchSpanProcessor(
@@ -305,6 +308,7 @@ function addSpanProcessors(okahuProcessors: SpanProcessor[] = []) {
         ))
     }
     else {
+        console.log(`addSpanProcessors| Using Console span exporter EELSSE`);
         okahuProcessors.push(
             ...getMonocleExporters().map((exporter) => {
                 return new PatchedBatchSpanProcessor(

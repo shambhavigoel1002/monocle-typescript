@@ -59,6 +59,7 @@ const WORKFLOW_TYPE_MAP = {
 }
 
 function getWorkflowName(span) {
+    console.log("SPAN", span);
     try {
         return span.resource.attributes["SERVICE_NAME"];
     } catch (e) {

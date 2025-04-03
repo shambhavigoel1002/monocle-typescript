@@ -4,6 +4,8 @@ import { config as openaiPackages } from "../metamodel/openai/methods";
 import { config as sageMakerPackages } from "../metamodel/sagemaker/methods";
 import { config as bedrockPackages } from "../metamodel/bedrock/methods";
 import { config as openSearchPackages } from "../metamodel/opensearch/methods";
+import { config as anthropicPackages } from "../metamodel/anthropic/methods";
+
 
 export const combinedPackages = [
   ...langchainPackages,
@@ -11,5 +13,6 @@ export const combinedPackages = [
   ...openaiPackages,
   ...sageMakerPackages,
   ...bedrockPackages,
-  ...openSearchPackages
+  ...openSearchPackages,
+  ...anthropicPackages
 ];
